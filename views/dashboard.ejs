@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md p-6 bg-gray-800 rounded-lg shadow-lg text-center">
+        <h2 class="text-2xl font-bold mb-4">Welcome, <%= username %>!</h2>
+        <p class="text-gray-400">You are now logged in.</p>
+        <p class="text-gray-400">Your socket ID is <span id="socketId">connecting...</span></p>
+
+        <!-- Link to Chat Page -->
+        <a href="/chat" class="mt-4 w-full bg-blue-500 p-2 rounded hover:bg-blue-600 block text-center">
+            Go to Chat
+        </a>
+
+        <!-- Logout Button -->
+        <a href="/logout" class="mt-4 w-full bg-red-500 p-2 rounded hover:bg-red-600 block text-center">
+            Logout
+        </a>
+    </div>
+    
+    <!-- Load socket.io client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Dashboard JavaScript -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            try {
+                console.log("Connecting to socket.io...");
+                const socket = io();
+                
+                socket.on("connect", function() {
+                    console.log("Socket connected successfully!");
+                });
+                
+                socket.on("socketId", function(id) {
+                    document.getElementById("socketId").textContent = id;
+                    console.log("Socket ID received:", id);
+                });
+                
+                socket.on("connect_error", function(error) {
+                    console.error("Socket connection error:", error);
+                });
+            } catch (error) {
+                console.error("Error initializing socket:", error);
+            }
+        });
+    </script>
+</body>
+</html>

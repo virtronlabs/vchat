@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Private Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex h-screen">
+    <!-- Conversation List (Left Sidebar) -->
+    <div class="w-1/4 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
+      <!-- User Profile Section -->
+      <div class="flex items-center mb-4 pb-3 border-b border-gray-700">
+        <div class="w-10 h-10 rounded-full bg-gray-700 mr-3 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-white" id="current-username">JohnDoe</h3>
+        </div>
+      </div>
+      
+      <!-- Tabs -->
+      <div class="flex border-b border-gray-700 mb-4">
+        <div class="w-1/2 py-2 text-center font-medium text-white border-b-2 border-blue-500">Messages</div>
+        <div class="w-1/2 py-2 text-center font-medium text-gray-400">Requests</div>
+      </div>
+      
+      <!-- Conversation List -->
+      <ul class="space-y-2">
+        <!-- Example Conversations -->
+        <li class="p-2 cursor-pointer rounded-lg hover:bg-gray-700">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-gray-600 rounded-full mr-3"></div>
+            <p class="font-semibold">User 1</p>
+          </div>
+        </li>
+        <li class="p-2 cursor-pointer rounded-lg hover:bg-gray-700">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-gray-600 rounded-full mr-3"></div>
+            <p class="font-semibold">User 2</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="flex-1 flex flex-col bg-gray-900">
+      <!-- Chat Header -->
+      <div class="p-4 border-b border-gray-700">
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-gray-600 rounded-full mr-3"></div>
+          <h3 class="font-semibold text-white" id="chat-header-username">JaneDoe</h3>
+        </div>
+      </div>
+
+      <!-- Message History -->
+      <div id="message-history" class="flex-1 p-4 overflow-y-auto">
+        <!-- Dummy Messages -->
+        <div class="mb-4 text-right">
+          <div class="inline-block p-2 bg-blue-500 text-white rounded-lg">
+            Hey Jane, how are you?
+          </div>
+          <div class="text-xs text-gray-400 mt-1">
+            10:30 AM
+          </div>
+        </div>
+        <div class="mb-4 text-left">
+          <div class="inline-block p-2 bg-gray-700 text-white rounded-lg">
+            Hi John! I'm good, thanks. How about you?
+          </div>
+          <div class="text-xs text-gray-400 mt-1">
+            10:31 AM
+          </div>
+        </div>
+        <div class="mb-4 text-right">
+          <div class="inline-block p-2 bg-blue-500 text-white rounded-lg">
+            I'm doing great! Just working on a new project.
+          </div>
+          <div class="text-xs text-gray-400 mt-1">
+            10:32 AM
+          </div>
+        </div>
+        <div class="mb-4 text-left">
+          <div class="inline-block p-2 bg-gray-700 text-white rounded-lg">
+            That sounds exciting! What's it about?
+          </div>
+          <div class="text-xs text-gray-400 mt-1">
+            10:33 AM
+          </div>
+        </div>
+      </div>
+
+      <!-- Message Input Box -->
+      <div class="p-4 border-t border-gray-700">
+        <div class="flex items-center">
+          <input
+            type="text"
+            id="message-input"
+            placeholder="Type a message..."
+            class="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded-lg mr-2"
+          />
+          <button
+            id="send-button"
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript for Real-Time Messaging -->
+  <script>
+    const socket = io();
+
+    // Send Message
+    const messageInput = document.getElementById("message-input");
+    const sendButton = document.getElementById("send-button");
+
+    sendButton.addEventListener("click", () => {
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      // Emit the message to the server
+      socket.emit("privateMessage", {
+        to: "JaneDoe", // Replace with the other user's username
+        message,
+      });
+
+      // Clear the input box
+      messageInput.value = "";
+
+      // Add the message to the message history
+      const messageHistory = document.getElementById("message-history");
+      const newMessage = document.createElement("div");
+      newMessage.className = "mb-4 text-right";
+      newMessage.innerHTML = `
+        <div class="inline-block p-2 bg-blue-500 text-white rounded-lg">
+          ${message}
+        </div>
+        <div class="text-xs text-gray-400 mt-1">
+          ${new Date().toLocaleTimeString()}
+        </div>
+      `;
+      messageHistory.appendChild(newMessage);
+
+      // Scroll to the bottom of the message history
+      messageHistory.scrollTop = messageHistory.scrollHeight;
+    });
+
+    // Receive Message
+    socket.on("privateMessage", (data) => {
+      if (data.from === "JaneDoe") { // Replace with the other user's username
+        const messageHistory = document.getElementById("message-history");
+        const newMessage = document.createElement("div");
+        newMessage.className = "mb-4 text-left";
+        newMessage.innerHTML = `
+          <div class="inline-block p-2 bg-gray-700 text-white rounded-lg">
+            ${data.message}
+          </div>
+          <div class="text-xs text-gray-400 mt-1">
+            ${new Date().toLocaleTimeString()}
+          </div>
+        `;
+        messageHistory.appendChild(newMessage);
+
+        // Scroll to the bottom of the message history
+        messageHistory.scrollTop = messageHistory.scrollHeight;
+      }
+    });
+  </script>
+</body>
+</html>

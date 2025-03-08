@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <h1><%= message %></h1>
+  <h2>User List</h2>
+  <% if (users && users.length > 0) { %>
+    <ul>
+      <% users.forEach(function(user) { %>
+        <li><%= user.username %></li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p>No users found.</p>
+  <% } %>
+</body>
+</html>
