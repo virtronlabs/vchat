@@ -44,25 +44,12 @@ app.use("/api", apiRoutes);
 // === SOCKET.IO LOGIC ===
 const usersOnline = new Map();
 
-io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  if (!token) {
-    return next(new Error("Authentication error"));
-  }
-
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) {
-      return next(new Error("Authentication error"));
-    }
-    socket.user = user; // Attach the authenticated user to the socket
-    next();
-  });
-});
-
 io.on("connection", (socket) => {
   console.log("New socket connection:", socket.id);
 
-  // Mark the user as online
+  // Send the socket ID to the client on connection
+  socket.emit("socketId", socket.id);
+
   socket.on("userOnline", () => {
     const username = socket.user.username; // Get the username from the authenticated user
     usersOnline.set(username, socket.id);
@@ -71,64 +58,18 @@ io.on("connection", (socket) => {
     io.emit("updateOnlineUsers", Array.from(usersOnline.keys()));
   });
 
-  // Load conversation data
-  socket.on("loadConversation", async (threadId) => {
-    try {
-      const conversation = await Conversation.findById(threadId)
-        .populate("participants", "username")
-        .populate("messages.sender", "username");
-
-      // Send the conversation data to the client
-      socket.emit("conversationLoaded", conversation);
-    } catch (error) {
-      console.error("Error loading conversation:", error);
-      socket.emit("error", "Failed to load conversation");
-    }
-  });
-
-  // Handle private messages
-  socket.on("privateMessage", async ({ to, message, threadId }) => {
+  socket.on("privateMessage", ({ to, message }) => {
     const recipientSocketId = usersOnline.get(to);
-    if (!recipientSocketId) {
-      return socket.emit("error", "User is not online");
-    }
-
-    try {
-      // Save the message to the database
-      const conversation = await Conversation.findById(threadId);
-      if (!conversation) {
-        return socket.emit("error", "Conversation not found");
-      }
-
-      const newMessage = {
-        sender: socket.user.userId, // Assuming `userId` is part of the JWT payload
-        content: message,
-        timestamp: new Date(),
-      };
-
-      conversation.messages.push(newMessage);
-      await conversation.save();
-
-      // Emit the message to the recipient
+    if (recipientSocketId) {
       io.to(recipientSocketId).emit("privateMessage", {
-        from: socket.user.username,
+        from: socket.username,
         message,
-        threadId,
       });
-
-      // Emit the message back to the sender
-      socket.emit("privateMessage", {
-        from: socket.user.username,
-        message,
-        threadId,
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-      socket.emit("error", "Failed to send message");
+    } else {
+      socket.emit("error", "User is not online");
     }
   });
 
-  // Handle disconnection
   socket.on("disconnect", () => {
     if (socket.username) {
       usersOnline.delete(socket.username);
